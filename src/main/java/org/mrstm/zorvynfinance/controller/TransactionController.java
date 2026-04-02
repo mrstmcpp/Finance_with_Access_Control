@@ -2,18 +2,24 @@ package org.mrstm.zorvynfinance.controller;
 
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.mrstm.zorvynfinance.dto.Transaction.AddTransactionRequest;
 import org.mrstm.zorvynfinance.dto.Transaction.UpdateTransactionRequest;
 import org.mrstm.zorvynfinance.model.Category;
 import org.mrstm.zorvynfinance.model.Type;
 import org.mrstm.zorvynfinance.service.TransactionService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.time.LocalDate;
-import java.util.Objects;
 
+@Validated
 @RestController
 @RequestMapping("/transactions")
 public class TransactionController {
@@ -24,42 +30,57 @@ public class TransactionController {
     }
 
     @GetMapping("/{transactionId}")
-    private ResponseEntity<?> getTransaction(@PathVariable String transactionId){
-        return null;
+    public ResponseEntity<?> getTransaction(
+            Principal principal,
+            @PathVariable @NotBlank(message = "transactionId is required") String transactionId
+    ) {
+        return ResponseEntity.ok(transactionService.getTransactionById(currentUserId(principal), transactionId));
     }
 
-    @PostMapping("/")
-    private ResponseEntity<?> addTransaction(@Valid @RequestBody AddTransactionRequest transactionRequest){
-        return null;
+    @PostMapping
+    public ResponseEntity<?> addTransaction(
+            Principal principal,
+            @Valid @RequestBody AddTransactionRequest transactionRequest
+    ){
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(transactionService.addTransaction(currentUserId(principal), transactionRequest));
     }
 
     @PatchMapping("/{transactionId}")
-    private ResponseEntity<?> updateTransaction(@PathVariable String transactionId , @Valid @RequestBody UpdateTransactionRequest updateTransactionRequest){
-        return null;
+    public ResponseEntity<?> updateTransaction(
+            Principal principal,
+            @PathVariable @NotBlank(message = "transactionId is required") String transactionId,
+            @Valid @RequestBody UpdateTransactionRequest updateTransactionRequest
+    ) {
+        return ResponseEntity.ok(transactionService.updateTransaction(currentUserId(principal), transactionId, updateTransactionRequest));
     }
 
     @DeleteMapping("/{transactionId}")
-    private ResponseEntity<?> deleteTransaction(@PathVariable String transactionId){
-        return null;
+    public ResponseEntity<?> deleteTransaction(
+            Principal principal,
+            @PathVariable @NotBlank(message = "transactionId is required") String transactionId
+    ) {
+        transactionService.deleteTransaction(currentUserId(principal), transactionId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping
     public ResponseEntity<?> getTransactions(
+            Principal principal,
             @RequestParam(required = false) Type type,
             @RequestParam(required = false) Category category,
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(required = false) @Size(max = 100, message = "search must not be greater than 100 characters") String search,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be 0 or greater") int page,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") @Max(value = 100, message = "Size must not be greater than 100") int size
     ){
-        // username is eq to userId
-        String userId = Objects.requireNonNull(SecurityContextHolder
-                        .getContext()
-                        .getAuthentication())
-                .getName();
-//        System.out.println(userId);
         return ResponseEntity.ok(
-                transactionService.getFilteredTransactions(userId, type, category, startDate, endDate, page, size)
+                transactionService.getFilteredTransactions(currentUserId(principal), type, category, startDate, endDate, search, page, size)
         );
+    }
+
+    private String currentUserId(Principal principal) {
+        return principal.getName();
     }
 }

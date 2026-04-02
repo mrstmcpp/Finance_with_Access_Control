@@ -2,7 +2,6 @@ package org.mrstm.zorvynfinance.controller;
 
 import jakarta.validation.Valid;
 import org.mrstm.zorvynfinance.dto.User.AuthRequest;
-import org.mrstm.zorvynfinance.exception.InvalidCredentialsException;
 import org.mrstm.zorvynfinance.exception.UserAlreadyExistsException;
 import org.mrstm.zorvynfinance.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +19,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) throws InvalidCredentialsException {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) {
         return userService.loginWithUsernameAndPassword(authRequest);
     }
 

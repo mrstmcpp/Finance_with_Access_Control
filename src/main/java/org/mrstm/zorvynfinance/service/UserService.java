@@ -27,15 +27,14 @@ public class UserService {
         this.jwtService = jwtService;
     }
 
-    public ResponseEntity<?> loginWithUsernameAndPassword(AuthRequest authRequest) throws InvalidCredentialsException {
+    public ResponseEntity<?> loginWithUsernameAndPassword(AuthRequest authRequest) {
             Optional<User> user = userRepository.findByUsername(authRequest.getUsername());
 
             if(user.isPresent() &&
+                    user.get().getStatus() == Status.ACTIVE &&
                     passwordEncoder.matches(authRequest.getPassword(), user.get().getPassword())) {
 
                 String token = jwtService.generateToken(user.get());
-
-                System.out.println("UserId: " + user.get().getId());
                 return ResponseEntity.ok(new AuthResponse(token));
             }
 
