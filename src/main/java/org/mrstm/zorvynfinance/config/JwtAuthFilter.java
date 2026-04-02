@@ -35,16 +35,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7); // Remove "Bearer " prefix
-            String username = jwtService.extractUserName(token);
+            String userId = jwtService.extractUserId(token);
             String role = jwtService.extractRole(token);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 // Create Spring Security UserDetails object
                 UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-                        username,
+                        userId,
                         "",
                         Collections.singleton(new SimpleGrantedAuthority(role))
                 );
+
+//                System.out.println(userDetails);
 
                 // Set authentication in Security Context
                 UsernamePasswordAuthenticationToken authToken =

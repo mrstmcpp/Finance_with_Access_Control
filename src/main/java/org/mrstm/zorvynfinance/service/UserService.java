@@ -7,9 +7,9 @@ import org.mrstm.zorvynfinance.exception.UserAlreadyExistsException;
 import org.mrstm.zorvynfinance.model.User;
 import org.mrstm.zorvynfinance.repository.UserRepository;
 import org.mrstm.zorvynfinance.util.Role;
+import org.mrstm.zorvynfinance.util.Status;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +34,8 @@ public class UserService {
                     passwordEncoder.matches(authRequest.getPassword(), user.get().getPassword())) {
 
                 String token = jwtService.generateToken(user.get());
+
+                System.out.println("UserId: " + user.get().getId());
                 return ResponseEntity.ok(new AuthResponse(token));
             }
 
@@ -49,6 +51,7 @@ public class UserService {
                     .username(authRequest.getUsername())
                     .password(passwordEncoder.encode(authRequest.getPassword()))
                     .role(Role.VIEWER)
+                    .status(Status.ACTIVE)
                     .build();
 
             userRepository.save(user);

@@ -24,7 +24,7 @@ public class JwtService {
     public String generateToken(User user){
         return Jwts.builder()
                 .claim("role", user.getRole().name())
-                .subject(user.getUsername())
+                .subject(user.getId())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
                 .signWith(getSigningKey())
@@ -39,7 +39,7 @@ public class JwtService {
                 .getBody();
     }
 
-    public String extractUserName(String token){
+    public String extractUserId(String token){
         return extractClaims(token).getSubject();
     }
 

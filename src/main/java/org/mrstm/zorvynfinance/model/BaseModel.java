@@ -1,14 +1,13 @@
 package org.mrstm.zorvynfinance.model;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 
-import java.util.Date;
+import java.time.Instant;
 
 @Data
 @AllArgsConstructor
@@ -18,8 +17,8 @@ public abstract class BaseModel {
     private String id;
 
     @LastModifiedDate
-    private Date updatedAt;
+    private Instant  updatedAt;
 
     @CreatedDate
-    private Date createdAt;
+    private Instant createdAt;
 }

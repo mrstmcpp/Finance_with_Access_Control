@@ -5,7 +5,6 @@ import org.mrstm.zorvynfinance.dto.User.AuthRequest;
 import org.mrstm.zorvynfinance.exception.InvalidCredentialsException;
 import org.mrstm.zorvynfinance.exception.UserAlreadyExistsException;
 import org.mrstm.zorvynfinance.service.UserService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
