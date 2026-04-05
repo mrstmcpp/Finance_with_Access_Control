@@ -2,6 +2,7 @@ package org.mrstm.zorvynfinance.service;
 
 import org.mrstm.zorvynfinance.dto.Transaction.AddTransactionRequest;
 import org.mrstm.zorvynfinance.dto.Transaction.PaginatedTransactionResponse;
+import org.mrstm.zorvynfinance.dto.Transaction.TransactionResponse;
 import org.mrstm.zorvynfinance.dto.Transaction.UpdateTransactionRequest;
 import org.mrstm.zorvynfinance.exception.InvalidOperationException;
 import org.mrstm.zorvynfinance.exception.TransactionNotFoundException;
@@ -21,7 +22,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class TransactionService {
@@ -34,12 +34,12 @@ public class TransactionService {
         this.transactionRepository = transactionRepository;
     }
 
-    public Transaction getTransactionById(String userId, String transactionId) {
-        return transactionRepository.findByIdAndUserIdAndDeletedFalse(transactionId, userId)
-                .orElseThrow(() -> new TransactionNotFoundException("Transaction not found"));
+    public TransactionResponse getTransactionById(String userId, String transactionId) {
+        Transaction transaction = findOwnedActiveTransaction(userId, transactionId);
+        return toTransactionResponse(transaction);
     }
 
-    public Transaction addTransaction(String userId, AddTransactionRequest transactionRequest) {
+    public TransactionResponse addTransaction(String userId, AddTransactionRequest transactionRequest) {
         Transaction transaction = Transaction.builder()
                 .type(transactionRequest.getType())
                 .category(transactionRequest.getCategory())
@@ -49,11 +49,12 @@ public class TransactionService {
                 .userId(userId)
                 .deleted(false)
                 .build();
-        return transactionRepository.save(transaction);
+        Transaction saved = transactionRepository.save(transaction);
+        return toTransactionResponse(saved);
     }
 
-    public Transaction updateTransaction(String userId, String transactionId, UpdateTransactionRequest updateTransactionRequest) {
-        Transaction transaction = getTransactionById(userId, transactionId);
+    public TransactionResponse updateTransaction(String userId, String transactionId, UpdateTransactionRequest updateTransactionRequest) {
+        Transaction transaction = findOwnedActiveTransaction(userId, transactionId);
 
         if (updateTransactionRequest.getType() != null) {
             transaction.setType(updateTransactionRequest.getType());
@@ -75,17 +76,18 @@ public class TransactionService {
             throw new InvalidOperationException("At least one field must be provided for update");
         }
 
-        return transactionRepository.save(transaction);
+        Transaction saved = transactionRepository.save(transaction);
+        return toTransactionResponse(saved);
     }
 
     public void deleteTransaction(String userId, String transactionId) {
-        Transaction transaction = getTransactionById(userId, transactionId);
+        Transaction transaction = findOwnedActiveTransaction(userId, transactionId);
         transaction.setDeleted(true);
         transaction.setDeletedAt(Instant.now());
         transactionRepository.save(transaction);
     }
 
-    public PaginatedTransactionResponse<Transaction> getFilteredTransactions(
+    public PaginatedTransactionResponse<TransactionResponse> getFilteredTransactions(
             String userId,
             Type type,
             Category category,
@@ -122,9 +124,10 @@ public class TransactionService {
         query.with(pageable);
 
         List<Transaction> transactions = mongoTemplate.find(query, Transaction.class);
+        List<TransactionResponse> data = transactions.stream().map(this::toTransactionResponse).toList();
 
-        return PaginatedTransactionResponse.<Transaction>builder()
-                .data(transactions)
+        return PaginatedTransactionResponse.<TransactionResponse>builder()
+                .data(data)
                 .currentPage(page)
                 .pageSize(size)
                 .totalRecords(total)
@@ -139,7 +142,7 @@ public class TransactionService {
     private Criteria buildSearchCriteria(String search) {
         String normalized = search.trim();
         List<Criteria> criteriaList = new ArrayList<>();
-        criteriaList.add(Criteria.where("description").regex(normalized, "i"));
+        criteriaList.add(Criteria.where("description").regex(normalized, "i")); // i for case sensitivity , matching both upper nd lowercase
 
         for (Category value : Category.values()) {
             if (value.name().toLowerCase().contains(normalized.toLowerCase())) {
@@ -172,6 +175,22 @@ public class TransactionService {
                 && updateTransactionRequest.getDate() == null
                 && updateTransactionRequest.getAmount() == null
                 && updateTransactionRequest.getDescription() == null;
+    }
+
+    private Transaction findOwnedActiveTransaction(String userId, String transactionId) {
+        return transactionRepository.findByIdAndUserIdAndDeletedFalse(transactionId, userId)
+                .orElseThrow(() -> new TransactionNotFoundException("Transaction not found"));
+    }
+
+    private TransactionResponse toTransactionResponse(Transaction transaction) {
+        return TransactionResponse.builder()
+                .transactionId(transaction.getId())
+                .type(transaction.getType())
+                .category(transaction.getCategory())
+                .date(transaction.getDate())
+                .amount(transaction.getAmount())
+                .description(transaction.getDescription())
+                .build();
     }
 
 }

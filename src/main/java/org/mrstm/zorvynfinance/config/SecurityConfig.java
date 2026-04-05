@@ -35,13 +35,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll() // Allow registration/login
 
-                        // Dashboard summaries are for analyst/admin users.
+                        // Viewer can only view dashboard, analyst/admin can also view dashboard.
                         .requestMatchers(HttpMethod.GET, "/dashboard", "/dashboard/**")
-                            .hasAnyAuthority(Role.ANALYST.toString(), Role.ADMIN.toString())
-
-                        // Read transactions is allowed for all authenticated business roles.
-                        .requestMatchers(HttpMethod.GET, "/transactions", "/transactions/**")
                             .hasAnyAuthority(Role.VIEWER.toString(), Role.ANALYST.toString(), Role.ADMIN.toString())
+
+                        // Read transaction records is for analyst/admin.
+                        .requestMatchers(HttpMethod.GET, "/transactions", "/transactions/**")
+                            .hasAnyAuthority(Role.ANALYST.toString(), Role.ADMIN.toString())
 
                         // Mutating transactions requires admin.
                         .requestMatchers(HttpMethod.POST, "/transactions", "/transactions/**")

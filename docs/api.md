@@ -69,11 +69,9 @@ Responses:
 
 | Endpoint Group | VIEWER | ANALYST | ADMIN |
 |---|---:|---:|---:|
-| `GET /transactions/**` | Yes | Yes | Yes |
+| `GET /transactions/**` | No | Yes | Yes |
 | `POST/PUT/PATCH/DELETE /transactions/**` | No | No | Yes |
-| `GET /dashboard/**` | No | Yes | Yes |
-| `GET /finance/**` | No | Yes | Yes |
-| `POST/PUT/PATCH/DELETE /finance/**` | No | No | Yes |
+| `GET /dashboard/**` | Yes | Yes | Yes |
 | `/users/**` | No | No | Yes |
 
 Authorization failures:
@@ -210,7 +208,7 @@ Notes:
 
 ## 5) Dashboard API
 
-All dashboard routes are under `/dashboard` and require role `ANALYST` or `ADMIN`.
+All dashboard routes are under `/dashboard` and require role `VIEWER`, `ANALYST`, or `ADMIN`.
 
 ### Trend enum
 - `TrendType`: `WEEKLY`, `MONTHLY`
@@ -304,4 +302,79 @@ Security-layer error examples (`401`, `403`, `429`) are also returned as JSON wi
   - `GET /transactions/{id}`
   - dashboard endpoints
 - Current API does not expose a restore endpoint.
+
+---
+
+## 8) User Administration API
+
+All `/users/**` endpoints require role `ADMIN`.
+
+### User fields related to promotion
+
+The user record now keeps promotion audit metadata:
+
+- `promotedByUserId`: ID of the admin who performed the latest promotion
+- `promotionDate`: timestamp for when the latest promotion happened
+
+### PATCH `/users/{userId}/status`
+
+Mark user as active/inactive.
+
+Request body:
+
+```json
+{
+  "status": "INACTIVE"
+}
+```
+
+Allowed status values:
+- `ACTIVE`
+- `INACTIVE`
+
+Response (`200 OK`):
+
+```json
+{
+  "id": "...",
+  "username": "john_doe",
+  "role": "VIEWER",
+  "status": "INACTIVE",
+  "promotedByUserId": null,
+  "promotionDate": null
+}
+```
+
+### PATCH `/users/{userId}/promote`
+
+Promote a user role (this endpoint does not support demotion).
+
+Request body:
+
+```json
+{
+  "role": "ANALYST"
+}
+```
+
+Allowed promotion role values:
+- `ANALYST`
+- `ADMIN`
+
+Response (`200 OK`):
+
+```json
+{
+  "id": "...",
+  "username": "john_doe",
+  "role": "ANALYST",
+  "status": "ACTIVE",
+  "promotedByUserId": "admin_user_id",
+  "promotionDate": "2026-04-05T10:30:00Z"
+}
+```
+
+Errors:
+- `400` invalid role/status payload, demotion attempt, or no-op promotion
+- `404` user not found
 

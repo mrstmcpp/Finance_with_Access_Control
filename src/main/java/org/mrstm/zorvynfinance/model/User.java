@@ -3,8 +3,9 @@ package org.mrstm.zorvynfinance.model;
 import lombok.*;
 import org.mrstm.zorvynfinance.util.Role;
 import org.mrstm.zorvynfinance.util.Status;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.Instant;
 
 @Data
 @Builder
@@ -17,4 +18,6 @@ public class User extends BaseModel {
     private String password;
     private Role role;
     private Status status;
+    private String promotedByUserId;
+    private Instant promotionDate;
 }
